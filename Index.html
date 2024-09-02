@@ -3,62 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Application</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-
-        #chat-box {
-            width: 80%;
-            max-width: 600px;
-            height: 400px;
-            border: 1px solid #ccc;
-            background-color: #fff;
-            padding: 10px;
-            overflow-y: scroll;
-            margin-bottom: 20px;
-        }
-
-        #message-input {
-            width: 80%;
-            max-width: 600px;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-        }
-
-        #send-btn {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        #send-btn:hover {
-            background-color: #45a049;
-        }
-    </style>
+    <title>Firebase Chat</title>
 </head>
 <body>
+    <div id="chat-container">
+        <div id="messages"></div>
+        <input type="text" id="message-input" placeholder="Type a message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
 
-    <h1>Chat Application</h1>
-    <div id="chat-box"></div>
-    <input type="text" id="message-input" placeholder="Type a message...">
-    <button id="send-btn">Send</button>
-
-    <!-- Firebase App (the core Firebase SDK) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-    <!-- Firebase Analytics -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js"></script>
-    <!-- Firebase Firestore -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <!-- Include Firebase from CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-analytics.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
 
     <script>
         // Your web app's Firebase configuration
@@ -74,47 +31,31 @@
         };
 
         // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const analytics = firebase.getAnalytics(app);
-
-        // Initialize Firestore
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Reference to the chat collection in Firestore
-        const chatRef = db.collection("chats");
-
-        // Listen for new messages and display them
-        chatRef.orderBy("timestamp").onSnapshot((snapshot) => {
-            const chatBox = document.getElementById("chat-box");
-            chatBox.innerHTML = ""; // Clear chat box before reloading
-            snapshot.forEach((doc) => {
-                const message = doc.data();
-                const messageElement = document.createElement("div");
-                messageElement.textContent = `${message.name}: ${message.text}`;
-                chatBox.appendChild(messageElement);
-            });
-            chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the bottom
-        });
-
-        // Send a message when the user clicks "Send"
-        document.getElementById("send-btn").addEventListener("click", () => {
-            const messageInput = document.getElementById("message-input");
-            const messageText = messageInput.value;
-            if (messageText.trim() !== "") {
-                chatRef.add({
-                    name: "Anonymous", // You can change this to include user names
-                    text: messageText,
+        // Function to send a message
+        function sendMessage() {
+            const message = document.getElementById('message-input').value;
+            if (message.trim() !== '') {
+                db.collection('messages').add({
+                    text: message,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                messageInput.value = ""; // Clear input box
+                document.getElementById('message-input').value = ''; // Clear the input field
             }
-        });
+        }
 
-        // Optionally, you can also send a message when the user presses "Enter"
-        document.getElementById("message-input").addEventListener("keydown", (event) => {
-            if (event.key === "Enter") {
-                document.getElementById("send-btn").click();
-            }
+        // Function to load messages and listen for new ones
+        db.collection('messages').orderBy('timestamp').onSnapshot(snapshot => {
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = ''; // Clear messages
+            snapshot.forEach(doc => {
+                const message = doc.data().text;
+                const messageDiv = document.createElement('div');
+                messageDiv.textContent = message;
+                messagesDiv.appendChild(messageDiv);
+            });
         });
     </script>
 </body>
